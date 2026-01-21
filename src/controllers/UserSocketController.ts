@@ -1,7 +1,7 @@
 import { Server } from 'socket.io';
 import { BaseSocketController } from './BaseSocketController';
 import { UserService } from '../services/UserService';
-import { SocketClient } from '../types';
+import { SocketClient, User } from '../types';
 
 export class UserSocketController extends BaseSocketController {
   private userService: UserService;
@@ -72,7 +72,7 @@ export class UserSocketController extends BaseSocketController {
     });
 
     // Update user
-    socket.on('user:update', async (data: { id: number; updates: any }, callback) => {
+    socket.on('user:update', async (data: { id: number; updates: Partial<User> }, callback) => {
       try {
         const user = await this.userService.updateUser(data.id, data.updates);
         

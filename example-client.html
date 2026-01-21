@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boilerplate Node - Example Client</title>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .log {
+            height: 200px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Node.js TypeScript Boilerplate - Example Client</h1>
+    
+    <div class="section">
+        <h2>HTTP API Examples</h2>
+        <button onclick="testHealthCheck()">Health Check</button>
+        <button onclick="getAllUsers()">Get All Users</button>
+        <button onclick="createUser()">Create User</button>
+        <button onclick="getUserById()">Get User by ID</button>
+        <button onclick="deleteUser()">Delete User</button>
+        
+        <h3>Response:</h3>
+        <pre id="httpResponse"></pre>
+    </div>
+
+    <div class="section">
+        <h2>Socket.IO Examples</h2>
+        <button onclick="connectSocket()">Connect Socket</button>
+        <button onclick="disconnectSocket()">Disconnect</button>
+        <button onclick="socketGetAllUsers()">Get All Users (Socket)</button>
+        <button onclick="socketCreateUser()">Create User (Socket)</button>
+        <button onclick="socketGetUserCount()">Get User Count (Socket)</button>
+        
+        <h3>Socket Events Log:</h3>
+        <div class="log" id="socketLog"></div>
+    </div>
+
+    <div class="section">
+        <h2>Create User Form</h2>
+        <input type="text" id="username" placeholder="Username" value="test_user">
+        <input type="email" id="email" placeholder="Email" value="test@example.com">
+        <input type="password" id="password" placeholder="Password" value="password123">
+        <button onclick="createUserWithForm()">Create User (HTTP)</button>
+        <button onclick="socketCreateUserWithForm()">Create User (Socket)</button>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+        let socket = null;
+
+        // HTTP API Functions
+        async function testHealthCheck() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                document.getElementById('httpResponse').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('httpResponse').textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function getAllUsers() {
+            try {
+                const response = await fetch(`${API_URL}/api/users`);
+                const data = await response.json();
+                document.getElementById('httpResponse').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('httpResponse').textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function createUser() {
+            try {
+                const response = await fetch(`${API_URL}/api/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: 'demo_user_' + Date.now(),
+                        email: 'demo' + Date.now() + '@example.com',
+                        password: 'password123'
+                    })
+                });
+                const data = await response.json();
+                document.getElementById('httpResponse').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('httpResponse').textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function createUserWithForm() {
+            try {
+                const username = document.getElementById('username').value;
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                const response = await fetch(`${API_URL}/api/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+                const data = await response.json();
+                document.getElementById('httpResponse').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('httpResponse').textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function getUserById() {
+            const id = prompt('Enter user ID:', '1');
+            if (!id) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/users/${id}`);
+                const data = await response.json();
+                document.getElementById('httpResponse').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('httpResponse').textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function deleteUser() {
+            const id = prompt('Enter user ID to delete:', '1');
+            if (!id) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/users/${id}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                document.getElementById('httpResponse').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('httpResponse').textContent = `Error: ${error.message}`;
+            }
+        }
+
+        // Socket.IO Functions
+        function logSocket(message) {
+            const log = document.getElementById('socketLog');
+            const time = new Date().toLocaleTimeString();
+            log.innerHTML += `[${time}] ${message}<br>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function connectSocket() {
+            if (socket && socket.connected) {
+                logSocket('Already connected');
+                return;
+            }
+
+            socket = io(API_URL);
+
+            socket.on('connect', () => {
+                logSocket('✓ Connected to server');
+            });
+
+            socket.on('disconnect', () => {
+                logSocket('✗ Disconnected from server');
+            });
+
+            socket.on('user:created', (data) => {
+                logSocket(`🔔 User created: ${JSON.stringify(data)}`);
+            });
+
+            socket.on('user:updated', (data) => {
+                logSocket(`🔔 User updated: ${JSON.stringify(data)}`);
+            });
+
+            socket.on('user:deleted', (data) => {
+                logSocket(`🔔 User deleted: ${JSON.stringify(data)}`);
+            });
+        }
+
+        function disconnectSocket() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                logSocket('Disconnected');
+            }
+        }
+
+        function socketGetAllUsers() {
+            if (!socket || !socket.connected) {
+                logSocket('Not connected! Click "Connect Socket" first.');
+                return;
+            }
+
+            socket.emit('user:getAll', { limit: 10, offset: 0 }, (response) => {
+                logSocket(`Get all users response: ${JSON.stringify(response)}`);
+            });
+        }
+
+        function socketCreateUser() {
+            if (!socket || !socket.connected) {
+                logSocket('Not connected! Click "Connect Socket" first.');
+                return;
+            }
+
+            socket.emit('user:create', {
+                username: 'socket_user_' + Date.now(),
+                email: 'socket' + Date.now() + '@example.com',
+                password: 'password123'
+            }, (response) => {
+                logSocket(`Create user response: ${JSON.stringify(response)}`);
+            });
+        }
+
+        function socketCreateUserWithForm() {
+            if (!socket || !socket.connected) {
+                logSocket('Not connected! Click "Connect Socket" first.');
+                return;
+            }
+
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            socket.emit('user:create', { username, email, password }, (response) => {
+                logSocket(`Create user response: ${JSON.stringify(response)}`);
+            });
+        }
+
+        function socketGetUserCount() {
+            if (!socket || !socket.connected) {
+                logSocket('Not connected! Click "Connect Socket" first.');
+                return;
+            }
+
+            socket.emit('user:count', (response) => {
+                logSocket(`User count response: ${JSON.stringify(response)}`);
+            });
+        }
+    </script>
+</body>
+</html>

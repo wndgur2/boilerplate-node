@@ -50,7 +50,9 @@ export class UserService extends BaseService {
       throw new AppError('User with this username already exists', 400);
     }
     
-    // In a real application, you should hash the password here
+    // TODO: In production, hash the password using bcrypt or similar
+    // Example: const hashedPassword = await bcrypt.hash(password, 10);
+    // For now, storing plain text password (NOT SECURE - for demo purposes only)
     const userId = await this.userRepository.createUser(username, email, password);
     
     const user = await this.userRepository.findById(userId);

@@ -1,10 +1,13 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../types';
 
+// Express requires 4 parameters for error handling middleware
+// Even if 'next' is not used, it must be present for Express to recognize this as error middleware
 export const errorHandler = (
   err: Error | AppError,
   _req: Request,
-  res: Response
+  res: Response,
+  _next: NextFunction
 ): void => {
   if (err instanceof AppError) {
     res.status(err.statusCode).json({
@@ -23,7 +26,8 @@ export const errorHandler = (
 
 export const notFoundHandler = (
   _req: Request,
-  res: Response
+  res: Response,
+  _next: NextFunction
 ): void => {
   res.status(404).json({
     success: false,

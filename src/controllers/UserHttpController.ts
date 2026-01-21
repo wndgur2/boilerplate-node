@@ -14,12 +14,13 @@ export class UserHttpController extends BaseHttpController {
   }
 
   private initializeRoutes(): void {
+    // Note: Place specific routes before parameterized routes
+    this.router.get('/stats/count', this.asyncHandler(this.getUserCount.bind(this)));
     this.router.get('/', this.asyncHandler(this.getAllUsers.bind(this)));
     this.router.get('/:id', this.asyncHandler(this.getUserById.bind(this)));
     this.router.post('/', this.asyncHandler(this.createUser.bind(this)));
     this.router.put('/:id', this.asyncHandler(this.updateUser.bind(this)));
     this.router.delete('/:id', this.asyncHandler(this.deleteUser.bind(this)));
-    this.router.get('/stats/count', this.asyncHandler(this.getUserCount.bind(this)));
   }
 
   /**
