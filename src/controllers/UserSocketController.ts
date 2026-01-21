@@ -2,6 +2,7 @@ import { Server } from 'socket.io';
 import { BaseSocketController } from './BaseSocketController';
 import { UserService } from '../services/UserService';
 import { SocketClient, User } from '../types';
+import { isValidEmail } from '../utils/helpers';
 
 export class UserSocketController extends BaseSocketController {
   private userService: UserService;
@@ -57,6 +58,31 @@ export class UserSocketController extends BaseSocketController {
     // Create user
     socket.on('user:create', async (data: { username: string; email: string; password: string }, callback) => {
       try {
+        // Validate input
+        if (!data.username || !data.email || !data.password) {
+          callback({ 
+            success: false, 
+            error: 'Username, email, and password are required' 
+          });
+          return;
+        }
+        
+        if (!isValidEmail(data.email)) {
+          callback({ 
+            success: false, 
+            error: 'Invalid email format' 
+          });
+          return;
+        }
+        
+        if (data.password.length < 6) {
+          callback({ 
+            success: false, 
+            error: 'Password must be at least 6 characters long' 
+          });
+          return;
+        }
+        
         const user = await this.userService.createUser(data.username, data.email, data.password);
         
         // Broadcast to all clients that a new user was created
@@ -74,6 +100,24 @@ export class UserSocketController extends BaseSocketController {
     // Update user
     socket.on('user:update', async (data: { id: number; updates: Partial<User> }, callback) => {
       try {
+        // Validate email if provided in updates
+        if (data.updates.email && !isValidEmail(data.updates.email)) {
+          callback({ 
+            success: false, 
+            error: 'Invalid email format' 
+          });
+          return;
+        }
+        
+        // Validate password if provided in updates
+        if (data.updates.password && data.updates.password.length < 6) {
+          callback({ 
+            success: false, 
+            error: 'Password must be at least 6 characters long' 
+          });
+          return;
+        }
+        
         const user = await this.userService.updateUser(data.id, data.updates);
         
         // Broadcast to all clients that a user was updated
