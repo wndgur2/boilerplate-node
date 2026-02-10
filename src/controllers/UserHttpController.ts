@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { BaseHttpController } from './BaseHttpController';
 import { UserService } from '../services/UserService';
+import { isValidEmail } from '../utils/helpers';
 
 export class UserHttpController extends BaseHttpController {
   public router: Router;
@@ -54,6 +55,16 @@ export class UserHttpController extends BaseHttpController {
       return;
     }
     
+    if (!isValidEmail(email)) {
+      this.sendError(res, 'Invalid email format', 400);
+      return;
+    }
+    
+    if (password.length < 6) {
+      this.sendError(res, 'Password must be at least 6 characters long', 400);
+      return;
+    }
+    
     const user = await this.userService.createUser(username, email, password);
     this.sendSuccess(res, user, 'User created successfully', 201);
   }
@@ -64,6 +75,18 @@ export class UserHttpController extends BaseHttpController {
   private async updateUser(req: Request, res: Response): Promise<void> {
     const id = parseInt(req.params.id);
     const updates = req.body;
+    
+    // Validate email if provided in updates
+    if (updates.email && !isValidEmail(updates.email)) {
+      this.sendError(res, 'Invalid email format', 400);
+      return;
+    }
+    
+    // Validate password if provided in updates
+    if (updates.password && updates.password.length < 6) {
+      this.sendError(res, 'Password must be at least 6 characters long', 400);
+      return;
+    }
     
     const user = await this.userService.updateUser(id, updates);
     this.sendSuccess(res, user, 'User updated successfully');
